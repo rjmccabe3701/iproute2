@@ -36,7 +36,9 @@ static void stab_help(void)
 		"   tsize     : how many slots should size table have {512}\n"
 		"   mpu       : minimum packet size used in rate computations\n"
 		"   overhead  : per-packet size overhead used in rate computations\n"
-		"   linklayer : adapting to a linklayer e.g. atm\n"
+		"   linklayer : adapting to a linklayer e.g. ethernet, atm or custom\n"
+		"               a \"custom\" linklayer reads size table entries from\n"
+		"               stdin\n"
 		"Example: ... stab overhead 20 linklayer atm\n");
 
 }
