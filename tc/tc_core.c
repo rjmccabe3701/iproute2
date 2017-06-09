@@ -21,12 +21,23 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <assert.h>
 
 #include "tc_core.h"
 #include <linux/atm.h>
 
 static double tick_in_usec = 1;
 static double clock_factor = 1;
+
+struct size_table_entry {
+	unsigned int input_size_boundary_start;
+	unsigned int output_size_bytes;
+};
+
+//TODO: free
+static struct size_table_entry* custom_size_table = NULL;
+static int num_size_table_entries = 0;
+
 
 int tc_core_time2big(unsigned int time)
 {
@@ -89,6 +100,23 @@ static unsigned int tc_align_to_atm(unsigned int size)
 	return linksize;
 }
 
+static unsigned int tc_align_to_custom(unsigned int size)
+{
+	int i;
+
+	assert(custom_size_table != NULL);
+
+	for(i = num_size_table_entries -1; i >= 0 ; --i)
+	{
+		if(custom_size_table[i].input_size_boundary_start < size)
+		{
+			/* found it */
+			return custom_size_table[i].output_size_bytes;
+		}
+	}
+	return 0;
+}
+
 static unsigned int tc_adjust_size(unsigned int sz, unsigned int mpu, enum link_layer linklayer)
 {
 	if (sz < mpu)
@@ -97,6 +125,8 @@ static unsigned int tc_adjust_size(unsigned int sz, unsigned int mpu, enum link_
 	switch (linklayer) {
 	case LINKLAYER_ATM:
 		return tc_align_to_atm(sz);
+	case LINKLAYER_CUSTOM:
+		return tc_align_to_custom(sz);
 	case LINKLAYER_ETHERNET:
 	default:
 		/* No size adjustments on Ethernet */
@@ -185,6 +215,27 @@ int tc_calc_size_table(struct tc_sizespec *s, __u16 **stab)
 	if (!*stab)
 		return -1;
 
+	if(LINKLAYER_CUSTOM == linklayer)
+	{
+		custom_size_table = malloc(sizeof(struct size_table_entry)* s->tsize);
+		if(!custom_size_table)
+			return -1;
+		num_size_table_entries = s->tsize;
+
+		printf("Custom size table:\n");
+		printf("InputSizeStart -> IntputSizeEnd : Output Pkt Size\n");
+		for(i = 0; i <= s->tsize - 1; ++i)
+		{
+			printf("%d - %d: ", i << s->cell_log, ((i+1) << s->cell_log) - 1);
+			if(!scanf("%u", &custom_size_table[i].output_size_bytes))
+			{
+				fprintf(stderr, "Invalid custom stab table entry!\n");
+				return -1;
+			}
+
+			custom_size_table[i].input_size_boundary_start = i << s->cell_log;
+		}
+	}
 again:
 	for (i = s->tsize - 1; i >= 0; i--) {
 		sz = tc_adjust_size((i + 1) << s->cell_log, s->mpu, linklayer);

@@ -666,6 +666,8 @@ int get_linklayer(unsigned int *val, const char *arg)
 		res = LINKLAYER_ATM;
 	else if (matches(arg, "adsl") == 0)
 		res = LINKLAYER_ATM;
+	else if (matches(arg, "custom") == 0)
+		res = LINKLAYER_CUSTOM;
 	else
 		return -1; /* Indicate error */
 
@@ -684,6 +686,9 @@ void print_linklayer(char *buf, int len, unsigned int linklayer)
 		return;
 	case LINKLAYER_ATM:
 		snprintf(buf, len, "%s", "atm");
+		return;
+	case LINKLAYER_CUSTOM:
+		snprintf(buf, len, "%s", "custom");
 		return;
 	default:
 		snprintf(buf, len, "%s", "unknown");
