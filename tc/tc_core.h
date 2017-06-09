@@ -10,8 +10,8 @@ enum link_layer {
 	LINKLAYER_UNSPEC,
 	LINKLAYER_ETHERNET,
 	LINKLAYER_ATM,
+	LINKLAYER_CUSTOM,
 };
-
 
 int  tc_core_time2big(unsigned time);
 unsigned tc_core_time2tick(unsigned time);
